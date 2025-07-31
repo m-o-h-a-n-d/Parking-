@@ -17,7 +17,7 @@
             <!-- /.container-fluid -->
         </section>
         <!-- Main content -->
-        
+
         <section class="content">
             <!-- Default box -->
             <div class="container-fluid">
@@ -29,7 +29,7 @@
 
                                     <div class="input-group">
                                         <input type="text" name="search" class="form-control" placeholder="Search"
-                                            value="{{ Request:: get('search') }}">
+                                            value="{{ Request::get('search') }}">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-default">
                                                 <i class="fas fa-search"></i>
@@ -58,12 +58,6 @@
                             </thead>
                             <tbody>
                                 @foreach ($customers as $customer)
-                                    @php
-                                        $isUse = \App\Models\Subscription::where(
-                                            'customer_id',
-                                            $customer->id,
-                                        )->exists();
-                                    @endphp
                                     <tr>
 
                                         <td>{{ $customer->id }}</td>
@@ -74,21 +68,14 @@
                                         {{-- <td>{{ $customer->address }}</td> --}}
                                         <td>{{ $customer->total_pay }} $</td>
                                         <td>
-                                            @if ($isUse)
-                                                <svg class="text-success-500 h-6 w-6 text-success"
-                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke-width="2" stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
+                                            @if (!$customer->is_active)
+                                                <span class="text-danger">
+                                                    <i class="fas fa-times-circle"></i>
+                                                </span>
                                             @else
-                                                <svg class="text-danger h-6 w-6" xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                                    stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z">
-                                                    </path>
-                                                </svg>
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </span>
                                             @endif
                                         </td>
                                         <td>
@@ -102,8 +89,8 @@
                                                 </svg>
                                             </a>
 
-                                            <form action="{{ route('customer.destroy', $customer->id) }}" class="d-inline"
-                                                method="POST">
+                                            <form action="{{ route('customer.destroy', $customer->id) }}"
+                                                class="d-inline btn-delete" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-danger w-4 h-4 mr-1   border-0">

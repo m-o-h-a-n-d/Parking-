@@ -30,9 +30,10 @@
                                     <div class="mb-3">
                                         <label for="Customer_name">Customer Name</label>
                                         <select name="customer_id" id="customer_name" class="form-control" required>
-                                            <option>{{ $subscription->customer->name }}</option>
                                             @foreach ($customerAvailable as $customer)
-                                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                                <option value="{{ $customer->id }}" {{ $customer->id == $subscription->customer_id ? 'selected' : '' }}>
+                                                    {{ $customer->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -41,12 +42,10 @@
                                     <div class="mb-3">
                                         <label for="car_name">Car Name</label>
                                         <select name="car_id" id="car_name" class="form-control">
-
-                                            <option value="{{ $subscription->car->number }}">{{ $subscription->car->number }}>
-                                            </option>
                                             @foreach ($cars as $car)
-                                                <option value="{{ $subscription->car_id }}">
-                                                    {{ $subscription->car->number }}></option>
+                                                <option value="{{ $car->id }}" {{ $car->id == $subscription->car_id ? 'selected' : '' }}>
+                                                    {{ $car->number }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -104,13 +103,10 @@
             const customerSelect = document.getElementById('customer_name');
             const carSelect = document.getElementById('car_name');
 
-            // Start with empty car list
-            carSelect.innerHTML = '<option selected disabled>-- Select Car --</option>';
+            // Function to load cars based on customer ID
+            function loadCars(customerId, selectedCarId, subscriptionId) {
+                if (!customerId) return;
 
-            customerSelect.addEventListener('change', function() {
-                const customerId = this.value;
-
-                // Show loading message
                 carSelect.innerHTML = '<option selected disabled>Loading cars...</option>';
 
                 fetch(`/cars/by-customer/${customerId}`)
@@ -121,6 +117,9 @@
                             const option = document.createElement('option');
                             option.value = car.id;
                             option.textContent = car.number;
+                            if (selectedCarId && car.id == selectedCarId) {
+                                option.selected = true;
+                            }
                             carSelect.appendChild(option);
                         });
                     })
@@ -128,6 +127,19 @@
                         console.error('Error loading cars:', error);
                         carSelect.innerHTML = '<option selected disabled>Failed to load cars</option>';
                     });
+            }
+
+            // Trigger car loading on page load if a customer is already selected
+            const initialCustomerId = customerSelect.value;
+            const initialCarId = "{{ $subscription->car_id }}";
+            const currentSubscriptionId = "{{ $subscription->id }}"; // Get current subscription ID
+            if (initialCustomerId) {
+                loadCars(initialCustomerId, initialCarId, currentSubscriptionId);
+            }
+
+            // Event listener for customer change
+            customerSelect.addEventListener('change', function() {
+                loadCars(this.value, null, currentSubscriptionId); // Pass subscription ID on change
             });
         });
     </script>

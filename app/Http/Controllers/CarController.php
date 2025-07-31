@@ -13,13 +13,12 @@ class CarController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        // $cars = Car::all();
-
-        $query = $request->input('search'); // الحصول على قيمة البحث من الطلب
-
-        $cars = Car::where('number', 'like', "%{$query}%")->paginate(10); // البحث داخل الأسماء
+        $query = $request->post('search'); // مش get
+        $cars = Car::when($query, function ($q) use ($query) {
+            return $q->where('number', 'like', "%{$query}%");
+        })->paginate(10);
 
         return view('cars.car', compact('cars'));
     }
@@ -42,7 +41,8 @@ class CarController extends Controller
         $input = $request->all();
 
         Car::create($input);
-        return redirect()->route('cars.index');
+        return redirect()->route('cars.index')->with('success', 'car added successfully');
+
     }
 
     /**
@@ -71,7 +71,7 @@ class CarController extends Controller
         $input = $request->all();
         $car = Car::find($id);
         $car->update($input);
-        return redirect()->route('cars.index');
+        return redirect()->route('cars.index')->with('Success', 'Car has been updated');
     }
 
     /**
@@ -80,19 +80,20 @@ class CarController extends Controller
     public function destroy($id)
     {
         Car::find($id)->delete();
-        return redirect()->route('cars.index');
+        return redirect()->route('cars.index')->with('error', 'Car has been deleted');
+
     }
 
 
-    public function getCarsByCustomer($customer_id)
+    public function getCarsByCustomer($customer_id, $subscription_id = null)
     {
         // أولاً: هات كل العربيات اللي داخلة في اشتراكات
-        $usedCarIds = Subscription::pluck('car_id')->toArray();
+        $usedCarIds = Subscription::where('id', '!=', $subscription_id)->pluck('car_id')->toArray();
 
         // بعد كده: هات العربيات بتاعة العميل اللي مش مستخدمة في اشتراك
         $cars = Car::where('customer_id', $customer_id)
-                   ->whereNotIn('id', $usedCarIds)
-                   ->get();
+            ->whereNotIn('id', $usedCarIds)
+            ->get();
 
         return response()->json($cars);
     }

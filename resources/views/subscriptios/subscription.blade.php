@@ -24,11 +24,10 @@
                     <div class="card-header">
                         <div class="card-tools">
                             <div class="input-group input-group" style="width: 250px">
-                                <form action="{{ route('subscriptions.index') }}" method="GET" class="d-inline">
-                                    @csrf
+                                <form action="{{ route('subscriptios.search') }}" method="GET" class="d-inline">
                                     <div class="input-group">
-                                        <input type="text" name="search" class="form-control" placeholder="Search"
-                                            value="{{ request('search') }}">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Search by Customer Name" value="{{ request('search') }}">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-default">
                                                 <i class="fas fa-search"></i>
@@ -50,23 +49,31 @@
                                     <th width="70">slot</th>
                                     <th width="100">Start Date</th>
                                     <th width="100">End Date</th>
-
-
+                                    <th width="100">Status</th>
                                     <th width="100">actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($subscriptions as $sub)
-                                    <tr>
+                                    <tr data-subscription-id="{{ $sub->id }}" data-end-date="{{ $sub->end_date }}"
+                                        data-customer-id="{{ $sub->customer->id }}" data-slot-id="{{ $sub->slot->id }}">
                                         <td>{{ $sub->id }}</td>
-                                        <td>{{ $sub->customer->name }}</td>
+                                        <td class="customer-status">
+                                            {{ $sub->customer->name }}
+                                            <span class="status-indicator"></span>
+                                        </td>
                                         <td>{{ $sub->car->number }}</td>
-                                        <td>{{ $sub->slot->location }}</td>
+                                        <td class="slot-status">
+                                            {{ $sub->slot->location }}
+                                            <span class="status-indicator"></span>
+                                        </td>
                                         <td>{{ $sub->start_date }}</td>
                                         <td>{{ $sub->end_date }}</td>
-
+                                        <td class="subscription-status">
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
                                         <td>
-                                            <a href="{{route('subscriptions.edit',$sub->id)}}">
+                                            <a href="{{ route('subscriptions.edit', $sub->id) }}">
                                                 <svg class="filament-link-icon w-4 h-4 mr-1"
                                                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                                     fill="currentColor" aria-hidden="true">
@@ -76,11 +83,11 @@
                                                 </svg>
                                             </a>
 
-                                            <form action="{{ route('subscriptions.destroy', $sub->id) }}" class="d-inline"
-                                                method="POST">
+                                            <form action="{{ route('subscriptions.destroy', $sub->id) }}"
+                                                class="d-inline btn-delete" method="POST">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-danger w-4 h-4 mr-1   border-0">
+                                                <button type="submit" class="text-danger w-4 h-4 mr-1 border-0">
                                                     <svg wire:loading.remove.delay="" wire:target=""
                                                         class="filament-link-icon w-4 h-4 mr-1"
                                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
@@ -91,11 +98,9 @@
                                                     </svg>
                                                 </button>
                                             </form>
-
                                         </td>
                                     </tr>
                                 @endforeach
-
                             </tbody>
                         </table>
                     </div>
@@ -115,3 +120,50 @@
         <!-- /.content -->
     </div>
 @endsection
+
+@push('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function checkExpiredSubscriptions() {
+                const now = new Date();
+                const rows = document.querySelectorAll('tr[data-end-date]');
+
+                rows.forEach(row => {
+                    const endDate = new Date(row.dataset.endDate);
+                    const statusCell = row.querySelector('.subscription-status');
+                    const customerCell = row.querySelector('.customer-status');
+                    const slotCell = row.querySelector('.slot-status');
+
+                    if (endDate <= now) {
+
+                        statusCell.innerHTML = '<span class="badge badge-danger">Expired</span>';
+
+
+                        const subscriptionId = row.dataset.subscriptionId;
+                        const customerId = row.dataset.customerId;
+                        const slotId = row.dataset.slotId;
+
+
+                    } else {
+                        // Calculate time remaining
+                        const timeRemaining = endDate - now;
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+                        // Update status with time remaining
+                        statusCell.innerHTML =
+                            `<span class="badge badge-success">Active (${hours}h ${minutes}m)</span>`;
+
+
+                    }
+                });
+            }
+
+            // Check immediately when page loads
+            checkExpiredSubscriptions();
+
+            // Then check every 30 seconds
+            setInterval(checkExpiredSubscriptions, 30000);
+        });
+    </script>
+@endpush

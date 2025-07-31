@@ -8,6 +8,7 @@ use App\Models\Slot;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Mockery\Matcher\Type;
 
 class SubscriptionController extends Controller
 {
@@ -19,11 +20,37 @@ class SubscriptionController extends Controller
         $query = $request->input('search');
         $subscriptions = Subscription::all();
 
+        // Filter subscriptions based on search query if provided
+        if ($query) {
+            $subscriptions = $subscriptions->filter(function ($subscription) use ($query) {
+                // Assuming search is by customer name. Adjust if needed for other fields.
+                return strpos(strtolower($subscription->customer->name), strtolower($query)) !== false;
+            });
+        }
 
-        $subscription = Subscription::find(Customer::class);
-        $subscriptions = $subscriptions->filter(function ($subscription) use ($query) {
-            return strpos($subscription->customer->name, $query) !== false;
-        });
+        // Add an is_expired property to each subscription
+        $now = Carbon::now();
+        foreach ($subscriptions as $subscription) {
+            $subscription->is_expired = Carbon::parse($subscription->end_date)->lessThanOrEqualTo($now);
+
+            // If the subscription is expired, update the associated slot's status to false (available)
+            if ($subscription->is_expired) {
+                $slot = Slot::find($subscription->slot_id);
+                if ($slot) {
+                    // Check if there are any active subscriptions for this slot
+                    $activeSubscriptionsCount = Subscription::where('slot_id', $subscription->slot_id)
+                        ->where('end_date', '>', $now)
+                        ->where('id', '!=', $subscription->id) // Exclude the current expiring subscription
+                        ->count();
+
+                    // If no other active subscriptions, set slot status to false (available)
+                    if ($activeSubscriptionsCount === 0 && $slot->status !== false) {
+                        $slot->status = false;
+                        $slot->save();
+                    }
+                }
+            }
+        }
 
         return view('subscriptios.subscription', compact('subscriptions'));
     }
@@ -49,21 +76,18 @@ class SubscriptionController extends Controller
         return view('subscriptios.create', compact('customerAvailable', 'cars', 'availableSlots'));
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-
         $input = $request->all();
-        $slot = Slot::find($request->slot);
+        $slot = Slot::find($request->slot_id);
         if ($slot) {
-            $slot->status = true; // أو 1 حسب نوع الحقل
+            $slot->status = true; // Set to true (occupied) when a new subscription is created
             $slot->save();
         }
         $subscription = Subscription::create($input);
-        $subscription->slot = $request->slot;
 
         return redirect()->route('subscriptions.index');
     }
@@ -81,7 +105,7 @@ class SubscriptionController extends Controller
      */
     public function edit($id)
     {
-        $subscription = Subscription::find($id);
+        $subscription = Subscription::with('car')->find($id);
         $customerAvailable = Customer::all();
         $availableSlots = Slot::all();
         $cars = Car::all();
@@ -95,9 +119,14 @@ class SubscriptionController extends Controller
     public function update(Request $request, $id)
     {
         $input = $request->all();
-        $slot = Subscription::find($id);
-        $slot->update($input);
-        return redirect()->route('subscriptions.index');
+        $subscription = Subscription::find($id);
+        $subscription->update($input);
+
+        // After updating the subscription, we need to ensure the slot status is re-evaluated.
+        // The SlotController@index method will handle this when the slots page is viewed.
+        // No direct slot status update needed here, as it's handled globally by SlotController@index.
+
+        return redirect()->route('subscriptions.index')->with('success', 'Subscription has been updated successfully!');
     }
 
     /**
@@ -106,11 +135,8 @@ class SubscriptionController extends Controller
     public function destroy($id)
     {
         Subscription::find($id)->delete();
-        return redirect()->route('subscriptions.index');
+        return redirect()->route('subscriptions.index')->with('error', 'Subscription has been deleted');
     }
-
-
-
 
     public function calculateTotalPay($subscriptionId)
     {

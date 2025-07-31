@@ -6,7 +6,7 @@
             <div class="container-fluid my-2">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1>Create Slot</h1>
+                        <h1>Update Slot</h1>
                     </div>
                     <div class="col-sm-6 text-right">
                         <a href="{{ route('slots.index') }}" class="btn btn-primary">Back</a>
@@ -53,7 +53,7 @@
                         </div>
                     </div>
                     <div class="pb-5 pt-3">
-                        <button class="btn btn-primary" type="submit">Create</button>
+                        <button class="btn btn-primary" type="submit">Update</button>
                         <a href="{{ route('slots.index') }}" class="btn btn-outline-dark ml-3">Cancel</a>
                     </div>
                 </form>

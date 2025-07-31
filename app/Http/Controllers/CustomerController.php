@@ -23,21 +23,32 @@ class CustomerController extends Controller
             $customers->where('name', 'like', "%{$query}%");
         }
 
-        // جلب الاشتراكات لحساب إجمالي الدفع
+        // جلب الاشتراكات لحساب إجمالي الدفع وتحديد حالة النشاط
         $customers = $customers->with('subscriptions')->paginate(10);
 
-        // حساب إجمالي الدفع لكل عميل
+        // حساب إجمالي الدفع لكل عميل وتحديد ما إذا كان لديه اشتراك نشط
         foreach ($customers as $customer) {
             $totalPay = 0;
+            $isActive = false; // Initialize $isActive here
 
             foreach ($customer->subscriptions as $subscription) {
-                $startTime = Carbon::parse($subscription->start_date);
-                $endTime = Carbon::parse($subscription->end_date);
-                $hoursParked = max(1, $startTime->diffInHours($endTime));
-                $totalPay += $hoursParked * $subscription->slot->price;
+                // Check if the subscription is active (end date is in the future)
+                if (\Carbon\Carbon::parse($subscription->end_date)->isFuture()) {
+                    $isActive = true; // Mark as active if at least one active subscription is found
+
+                    // Calculate total pay for active subscriptions
+                    $startTime = \Carbon\Carbon::parse($subscription->start_date);
+                    $endTime = \Carbon\Carbon::parse($subscription->end_date);
+                    // Ensure end time is not before start time for calculation (should be handled by form validation, but good practice)
+                    if ($endTime->greaterThan($startTime)) {
+                        $hoursParked = max(1, $startTime->diffInHours($endTime));
+                        $totalPay += $hoursParked * $subscription->slot->price; // Assuming slot relation is loaded or available
+                    }
+                }
             }
 
             $customer->total_pay = $totalPay;
+            $customer->is_active = $isActive; // Add is_active property
         }
 
         return view('customers.customer', compact('customers'));
@@ -61,7 +72,8 @@ class CustomerController extends Controller
     {
         $input = $request->all();
         Customer::create($input);
-        return redirect()->route('customer.index');
+        return redirect()->route('customer.index')->with('success', 'Customer added successfully');
+
     }
 
     /**
@@ -89,7 +101,8 @@ class CustomerController extends Controller
         $input = $request->all();
         $customer = Customer::find($id);
         $customer->update($input);
-        return redirect()->route('customer.index');
+        return redirect()->route('customer.index')->with('success', 'Customer updated successfully');
+
     }
 
     /**
@@ -99,6 +112,14 @@ class CustomerController extends Controller
     {
 
         Customer::find($id)->delete();
-        return redirect()->route('customer.index');
+        return redirect()->route('customer.index')->with('error', 'Customer deleted successfully');
+
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $customer = Customer::findOrFail($id);
+        $customer->update(['status' => $request->status]);
+        return response()->json(['message' => 'Customer status updated successfully']);
     }
 }

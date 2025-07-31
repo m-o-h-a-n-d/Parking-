@@ -24,11 +24,10 @@
                     <div class="card-header">
                         <div class="card-tools">
                             <div class="input-group input-group" style="width: 250px">
-                                <form action="{{ route('slots.index') }}" method="GET" class="d-inline">
+                                <form action="{{ route('slots.search') }}" method="POST" class="d-inline">
                                     @csrf
                                     <div class="input-group">
-                                        <input type="text" name="search" class="form-control" placeholder="Search"
-                                            value="{{ request('search') }}">
+                                        <input type="text" name="search" class="form-control" placeholder="Search by slot number" value="{{ old('search') }}">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-default">
                                                 <i class="fas fa-search"></i>
@@ -36,6 +35,7 @@
                                         </div>
                                     </div>
                                 </form>
+
 
                             </div>
                         </div>
@@ -49,45 +49,32 @@
                                     <th width="70">location</th>
                                     <th width="100">price</th>
                                     <th width="100">status</th>
-
                                     <th width="100">actions</th>
 
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($slots as $slot)
-                                    @php
-                                        $isUsed = \App\Models\Subscription::where('slot_id', $slot->id)->exists();
-                                    @endphp
                                     <tr>
                                         <td>{{ $slot->id }}</td>
                                         <td>{{ $slot->number }}</td>
                                         <td>{{ $slot->location }}</td>
                                         <td>{{ $slot->price }} $</td>
-
-
-
                                         <td>
-                                            @if ($isUsed)
-                                                <svg class="text-success-500 h-6 w-6 text-success"
-                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke-width="2" stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
+                                            @if ($slot->status)
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </span>
                                             @else
-                                                <svg class="text-danger h-6 w-6" xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                                    stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z">
-                                                    </path>
-                                                </svg>
+                                                <span class="text-danger">
+                                                    <i class="fas fa-times-circle"></i>
+                                                </span>
                                             @endif
                                         </td>
 
+
                                         <td>
-                                            <a href="{{route('slots.edit', $slot->id )}}">
+                                            <a href="{{ route('slots.edit', $slot->id) }}">
                                                 <svg class="filament-link-icon w-4 h-4 mr-1"
                                                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                                     fill="currentColor" aria-hidden="true">
@@ -95,13 +82,13 @@
                                                         d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z">
                                                     </path>
                                                 </svg>
-                                            </a>
 
-                                            <form action="{{ route('slots.destroy', $slot->id) }}" class="d-inline"
-                                                method="POST">
+                                            </a>
+                                            <form action="{{ route('slots.destroy', $slot->id) }}"
+                                                class="d-inline btn-delete" method="POST">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-danger w-4 h-4 mr-1   border-0">
+                                                <button type="submit" class="text-danger w-4 h-4 mr-1 border-0">
                                                     <svg wire:loading.remove.delay="" wire:target=""
                                                         class="filament-link-icon w-4 h-4 mr-1"
                                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
@@ -112,11 +99,9 @@
                                                     </svg>
                                                 </button>
                                             </form>
-
                                         </td>
                                     </tr>
                                 @endforeach
-
                             </tbody>
                         </table>
                     </div>

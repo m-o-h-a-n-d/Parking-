@@ -9,9 +9,10 @@ class Slot extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['number',  'location', 'price'];
+    protected $fillable = ['number', 'location', 'price', 'status'];
 
-    public function Subscriptions(){
+    public function Subscriptions()
+    {
         return $this->hasMany(Subscription::class);
     }
 

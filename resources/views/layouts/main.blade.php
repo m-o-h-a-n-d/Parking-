@@ -4,7 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Laravel Shop :: Administrative Panel</title>
+    <title>parking system</title>
+    <link rel="icon" href="{{asset('img/image.png')}}">
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -27,7 +28,7 @@
                             class="fas fa-bars"></i></a>
                 </li>
             </ul>
-            
+
 
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
@@ -45,7 +46,7 @@
                             {{ Auth::user()->name }}
                         </a>
 
-                       
+
 
                         <div class="dropdown-divider"></div>
 
@@ -99,7 +100,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{route('slots.index')}}" class="nav-link">
+                            <a href="{{ route('slots.index') }}" class="nav-link">
                                 <i class="nav-icon fas fa-warehouse"></i>
 
 
@@ -107,7 +108,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{route('subscriptions.index')}}" class="nav-link">
+                            <a href="{{ route('subscriptions.index') }}" class="nav-link">
                                 <i class="nav-icon fas fa-dollar-sign"></i>
 
                                 <p>subscriptions</p>
@@ -134,19 +135,95 @@
 
         <footer class="main-footer">
 
-            <strong>Copyright &copy;2025 Mohaned Ahmed 
+            <strong>Copyright &copy;2025 Mohaned Ahmed
         </footer>
 
     </div>
     <!-- ./wrapper -->
+
     <!-- jQuery -->
+
     <script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Toastr -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right", // أو top-left لو حبيت
+        };
+
+
+
+        // زرار الحذف
+        $('.btn-delete').click(function(e) {
+            e.preventDefault();
+            let form = $(this).closest('form');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "you can't be undone",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+
+        // زرار التعديل (اختياري لو حابب تظهر نفس الفكرة للتعديل)
+        $('.btn-edit').click(function(e) {
+            e.preventDefault();
+            let link = $(this).attr('href');
+
+            Swal.fire({
+                title: 'هل تريد تعديل هذا العنصر؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'نعم، عدل',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = link;
+                }
+            });
+        });
+
+        // عرض رسائل Toastr من Laravel Session
+        @if (session('success'))
+            toastr.success("{{ session('success') }}");
+        @endif
+
+        @if (session('error'))
+            toastr.error("{{ session('error') }}");
+        @endif
+
+        @if (session('warning'))
+            toastr.warning("{{ session('warning') }}");
+        @endif
+    </script>
+
+
+
     <!-- Bootstrap 4 -->
     <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <!-- AdminLTE App -->
     <script src="{{ asset('js/adminlte.min.js') }}"></script>
     <!-- AdminLTE for demo purposes -->
     <script src="{{ asset('js/demo.js') }}"></script>
+
     @stack('js')
 </body>
 
