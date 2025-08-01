@@ -1,0 +1,42 @@
+# المرحلة الأولى: تثبيت Composer وتثبيت التبعيات
+FROM php:8.2-fpm AS build
+
+# تثبيت بعض الحزم المطلوبة
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+
+# تثبيت Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# تعيين مجلد العمل داخل الحاوية
+WORKDIR /var/www
+
+# نسخ ملفات المشروع
+COPY . .
+
+# تثبيت تبعيات Laravel
+RUN composer install --no-dev --optimize-autoloader
+
+# إعداد Laravel
+RUN php artisan config:cache \
+ && php artisan route:cache \
+ && php artisan view:cache \
+ && php artisan migrate --force
+
+# المرحلة الثانية: تشغيل PHP-FPM
+FROM php:8.2-fpm
+
+WORKDIR /var/www
+
+COPY --from=build /var/www /var/www
+
+EXPOSE 9000
+
+CMD ["php-fpm"]
