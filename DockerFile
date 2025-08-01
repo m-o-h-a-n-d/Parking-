@@ -1,3 +1,5 @@
+# Dockerfile
+
 # Use official PHP image
 FROM php:8.2-fpm
 
@@ -25,6 +27,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy app files
 COPY . .
 
+# Copy and set permission for entrypoint
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
@@ -34,5 +40,5 @@ RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www/storage
 # Expose port
 EXPOSE 9000
 
-# Start PHP-FPM server
-CMD ["php-fpm"]
+# Use custom entrypoint
+CMD ["entrypoint.sh"]
